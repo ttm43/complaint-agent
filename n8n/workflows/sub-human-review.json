@@ -1,0 +1,213 @@
+{
+  "id": "cmpHumanRev00001",
+  "name": "sub-human-review",
+  "active": false,
+  "nodes": [
+    {
+      "id": "ae1deeeb-ce87-4c92-a148-5c409e5ffb17",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -220
+      ],
+      "parameters": {
+        "content": "## sub-human-review\nMoney or decision changes need a person.\nThe workflow hands its resume URL to the backend and **pauses at the Wait node** until the reviewer clicks Approve / Reject.",
+        "width": 420,
+        "height": 180
+      }
+    },
+    {
+      "id": "543c20fd-6088-470b-a8e4-63ae200e954a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c0f68117-4d0b-44fd-ae4c-068d464036fa",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sub-human-review",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "93febb9f-8f4c-440a-a0ab-47fb0e95f4d7",
+      "name": "Register resume URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/tasks/{{ $('Webhook').first().json.body.taskId }}/resume-url",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ resumeUrl: $execution.resumeUrl }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "e168f3d1-9fa8-4a36-a5cd-1b4612d07099",
+      "name": "Wait for reviewer",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        0
+      ],
+      "webhookId": "9ed767f9-f4c8-400b-afb5-4048326fbdfe",
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "limitWaitTime": true,
+        "limitType": "afterTimeInterval",
+        "resumeAmount": 5,
+        "resumeUnit": "days",
+        "options": {}
+      }
+    },
+    {
+      "id": "4b5bf1b9-f37b-4f1a-aab5-52e54610cd1f",
+      "name": "Decided?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        760,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "034da363-2502-4d79-ab73-c87ea6991192",
+              "leftValue": "={{ $json.body?.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b866584a-c9e2-43ce-a442-ec9eb4b8c7ef",
+      "name": "Apply decision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/approvals/{{ $('Webhook').first().json.body.taskId }}/apply",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ approved: $json.body.approved, by: $json.body.by ?? 'reviewer' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "3c2bbd7d-223c-46d5-a4b8-024a9ad59ca4",
+      "name": "Escalate: no decision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/human-task",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, kind: 'handoff', reason: 'approval not decided within 5 days' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Register resume URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register resume URL": {
+      "main": [
+        [
+          {
+            "node": "Wait for reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for reviewer": {
+      "main": [
+        [
+          {
+            "node": "Decided?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decided?": {
+      "main": [
+        [
+          {
+            "node": "Apply decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate: no decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "_note": "Nine demo scenarios. 'say' is what the customer says (rendered to audio), 'asr' is what the mock ASR returns. 'agent' holds the mock LLM output for this scenario. Featured scenarios are marked with a star in the demo page.",
+  "scenarios": [
+    {
+      "id": "s1", "title": "Priya: assessment delayed 21 days", "featured": true, "tests": "happy path",
+      "customer": { "name": "Priya Sharma", "voice": "female" },
+      "turns": [
+        { "say": "Hi. It's P O L one zero zero two.", "asr": "Hi, it's POL1002.", "confidence": 0.95 },
+        { "say": "Yes, that's right.", "asr": "Yes, that's right.", "confidence": 0.97 },
+        { "say": "Twelfth of April, nineteen ninety.", "asr": "12 April 1990", "confidence": 0.94 },
+        { "say": "My car was hit three weeks ago and nobody has come to assess it yet. I'm still waiting.", "asr": "My car was hit three weeks ago and nobody has come to assess it yet. I'm still waiting.", "confidence": 0.93 },
+        { "say": "Okay, that's fine. Thanks.", "asr": "Okay, that's fine. Thanks.", "confidence": 0.96 }
+      ],
+      "agent": {
+        "claimId": "CLM-9002",
+        "reply": "I can see claim C L M nine zero zero two has been waiting twenty one days for an assessor. Our procedure is to assign one within ten business days, so this is overdue. I've escalated it to the assessment team lead as urgent, and they'll contact you within two business days.",
+        "action": { "type": "expedite_assessment", "citations": ["PROC-2.4", "COP-7.5"] }
+      },
+      "expected": { "state": "PENDING_REVIEW" }
+    },
+    {
+      "id": "s2", "title": "ASR mishears the policy number, then the date of birth does not match", "featured": true, "tests": "voice and identity",
+      "customer": { "name": "Priya Sharma", "voice": "female" },
+      "turns": [
+        { "say": "It's P O L one zero zero two.", "asr": "It's POL1007.", "confidence": 0.91 },
+        { "say": "No, it's one zero zero two.", "asr": "No, it's POL1007.", "confidence": 0.62 },
+        { "say": "No, that's still wrong.", "asr": "No, that's still wrong.", "confidence": 0.9 },
+        { "say": "(types 1 0 0 2 #)", "keypad": "1002" },
+        { "say": "First of May, nineteen eighty five.", "asr": "1 May 1985", "confidence": 0.92 }
+      ],
+      "expected": { "state": "HUMAN_HANDLING", "via": "UNVERIFIED" }
+    },
+    {
+      "id": "s3", "title": "Customer is vague, classification stays low", "featured": false, "tests": "classification confidence",
+      "customer": { "name": "Tom Nguyen", "voice": "male" },
+      "turns": [
+        { "say": "P O L one zero zero three.", "asr": "POL1003.", "confidence": 0.94 },
+        { "say": "Yep.", "asr": "Yep.", "confidence": 0.95 },
+        { "say": "Twentieth of November, nineteen eighty five.", "asr": "20 November 1985", "confidence": 0.93 },
+        { "say": "I'm just not happy with how things have been going, you know?", "asr": "I'm just not happy with how things have been going, you know?", "confidence": 0.9 },
+        { "say": "It's just everything, really. The whole thing.", "asr": "It's just everything, really. The whole thing.", "confidence": 0.88 }
+      ],
+      "expected": { "state": "HUMAN_HANDLING" }
+    },
+    {
+      "id": "s4", "title": "Tom: without a car he can't get to work", "featured": false, "tests": "risk signal",
+      "customer": { "name": "Tom Nguyen", "voice": "male" },
+      "turns": [
+        { "say": "P O L one zero zero three.", "asr": "POL1003.", "confidence": 0.94 },
+        { "say": "Yep.", "asr": "Yep.", "confidence": 0.95 },
+        { "say": "Twentieth of November, nineteen eighty five.", "asr": "20 November 1985", "confidence": 0.93 },
+        { "say": "My car's been at the repairer for over a month. Without it I can't get to work, and if this goes on I'm going to lose my job.", "asr": "My car's been at the repairer for over a month. Without it I can't get to work, and if this goes on I'm going to lose my job.", "confidence": 0.9 }
+      ],
+      "expected": { "state": "HUMAN_HANDLING", "priority": "high" }
+    },
+    {
+      "id": "s5", "title": "RPA fails reading claim notes", "featured": true, "tests": "legacy system",
+      "customer": { "name": "Ben Carter", "voice": "male" },
+      "turns": [
+        { "say": "P O L one zero zero six.", "asr": "POL1006.", "confidence": 0.95 },
+        { "say": "Yes.", "asr": "Yes.", "confidence": 0.97 },
+        { "say": "Second of December, nineteen eighty eight.", "asr": "2 December 1988", "confidence": 0.94 },
+        { "say": "I lodged my claim almost three weeks ago and I'm still waiting for anyone to look at the car.", "asr": "I lodged my claim almost three weeks ago and I'm still waiting for anyone to look at the car.", "confidence": 0.92 }
+      ],
+      "agent": { "claimId": "CLM-FAIL" },
+      "expected": { "state": "HUMAN_HANDLING", "humanTask": "rpa_failed" }
+    },
+    {
+      "id": "s6", "title": "Priya disputes the total-loss payout", "featured": false, "tests": "money",
+      "customer": { "name": "Priya Sharma", "voice": "female" },
+      "turns": [
+        { "say": "P O L one zero zero two.", "asr": "POL1002.", "confidence": 0.95 },
+        { "say": "Yes.", "asr": "Yes.", "confidence": 0.97 },
+        { "say": "Twelfth of April, nineteen ninety.", "asr": "12 April 1990", "confidence": 0.94 },
+        { "say": "The payout you offered for my car is way below what it's worth. Fourteen thousand two hundred is not enough.", "asr": "The payout you offered for my car is way below what it's worth. 14,200 is not enough.", "confidence": 0.9 }
+      ],
+      "agent": {
+        "claimId": "CLM-9003",
+        "reply": "Your policy says we pay the market value of your car, which is what it would cost to buy one of the same make, model, age, condition and kilometres. I can't change the amount myself, but I've sent your claim to a valuation specialist, who will review any comparable listings you have and may revise the offer. They'll call you within two business days.",
+        "action": { "type": "adjust_payout", "citations": ["PDS26-4.2", "PROC-6.1"], "params": { "suggestion": "Review offer of $14,200 against customer's comparable listings" } }
+      },
+      "expected": { "state": "PENDING_APPROVAL" }
+    },
+    {
+      "id": "s7", "title": "James: claim declined, extra documents never reviewed", "featured": true, "tests": "claim decision, PDS version",
+      "customer": { "name": "James Walker", "voice": "male" },
+      "turns": [
+        { "say": "P O L one zero zero one.", "asr": "POL1001.", "confidence": 0.95 },
+        { "say": "Correct.", "asr": "Correct.", "confidence": 0.96 },
+        { "say": "Third of September, nineteen seventy eight.", "asr": "3 September 1978", "confidence": 0.93 },
+        { "say": "My claim was declined, but I sent the police report they asked for weeks ago and nobody has looked at it.", "asr": "My claim was declined, but I sent the police report they asked for weeks ago and nobody has looked at it.", "confidence": 0.91 }
+      ],
+      "agent": {
+        "claimId": "CLM-8821",
+        "reply": "I can see your claim was declined under clause six point one of your policy because the police report number was missing, and that you sent it in twenty six days ago. Under clause seven point three, we should review new information within ten business days, so this is overdue. I can't change a claim decision myself, so I've sent it to a claims officer to re-assess as a priority. They'll contact you within two business days.",
+        "action": { "type": "reassess_decision", "citations": ["PDS24-6.1", "PDS24-7.3", "PROC-3.1"], "params": { "suggestion": "Re-assess CLM-8821 with the police report received 26 days ago" } }
+      },
+      "expected": { "state": "PENDING_APPROVAL", "afterApproval": "PENDING_REVIEW" }
+    },
+    {
+      "id": "s8", "title": "Repair complaint misclassified as a delay, then closed", "featured": true, "tests": "silent error",
+      "customer": { "name": "Daniel Reid", "voice": "male" },
+      "turns": [
+        { "say": "P O L one zero zero four.", "asr": "POL1004.", "confidence": 0.95 },
+        { "say": "Yes.", "asr": "Yes.", "confidence": 0.97 },
+        { "say": "Thirtieth of June, nineteen eighty two.", "asr": "30 June 1982", "confidence": 0.94 },
+        { "say": "The car came back from the repairer two weeks ago and it's still not right. I'm still waiting for someone to sort it out.", "asr": "The car came back from the repairer two weeks ago and it's still not right. I'm still waiting for someone to sort it out.", "confidence": 0.92 },
+        { "say": "I suppose so.", "asr": "I suppose so.", "confidence": 0.9 }
+      ],
+      "agent": {
+        "claimId": "CLM-9300",
+        "reply": "I can see your claim with our team. We aim to keep you informed and decide claims within four weeks, so I've sent a follow-up asking the team to contact you within two business days.",
+        "action": { "type": "expedite_assessment", "citations": ["COP-7.2"] }
+      },
+      "expected": { "state": "PENDING_REVIEW", "afterReopen": "REOPENED", "trueCategory": "repair_quality" }
+    },
+    {
+      "id": "s9", "title": "No basis found in the documents", "featured": false, "tests": "retrieval",
+      "customer": { "name": "Marcus Lee", "voice": "male" },
+      "turns": [
+        { "say": "P O L one zero zero five.", "asr": "POL1005.", "confidence": 0.95 },
+        { "say": "Yes.", "asr": "Yes.", "confidence": 0.97 },
+        { "say": "Twenty fifth of January, nineteen ninety three.", "asr": "25 January 1993", "confidence": 0.94 },
+        { "say": "My windscreen claim has been open for two weeks. I was told it would take three days.", "asr": "My windscreen claim has been open for two weeks. I was told it would take three days.", "confidence": 0.92 }
+      ],
+      "agent": { "claimId": "CLM-9400" },
+      "inject": { "retrieval": { "forceMode": "mix", "mixTimeout": true, "empty": true } },
+      "expected": { "state": "HUMAN_HANDLING" }
+    }
+  ]
+}

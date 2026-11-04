@@ -1,0 +1,109 @@
+{
+  "id": "cmpIdentity00001",
+  "name": "sub-identity",
+  "active": false,
+  "nodes": [
+    {
+      "id": "ac68ec5d-66e8-4aba-afb0-0e561b3bf7b4",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -220
+      ],
+      "parameters": {
+        "content": "## sub-identity\nPolicy number + date of birth checked against the policy system.\n**Execution data is not saved** for this workflow, so the DOB is never stored in n8n.",
+        "width": 360,
+        "height": 160
+      }
+    },
+    {
+      "id": "c44e48ab-3b5f-4343-ace3-d6edf0db918f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "d492493f-1ff3-46ac-aff7-fdfd655b35ee",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sub-identity",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "6fd03d67-b510-459b-a17b-1747561174e6",
+      "name": "Verify identity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/identity/verify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, policyNumber: $('Webhook').first().json.body.policyNumber, dob: $('Webhook').first().json.body.dob }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "da1fbb6e-0073-418e-ae0b-63bfc1159694",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.data) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify identity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify identity": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveExecutionProgress": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

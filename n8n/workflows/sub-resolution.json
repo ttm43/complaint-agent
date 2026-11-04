@@ -1,0 +1,106 @@
+{
+  "id": "cmpResolve000001",
+  "name": "sub-resolution",
+  "active": false,
+  "nodes": [
+    {
+      "id": "c7783636-79a4-49f4-a1d7-12d1c3c971a2",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -200
+      ],
+      "parameters": {
+        "content": "## sub-resolution\nThe model proposes an action with citations; the backend's whitelist decides: execute, needs approval, or hand to a person.",
+        "width": 360,
+        "height": 160
+      }
+    },
+    {
+      "id": "5286f62b-a93f-4b47-a7e6-3a99d5c78ad6",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c5174437-a172-43a3-a4a8-64ac8deedb8f",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sub-resolution",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "df612565-44fb-4a1f-a23e-49c3d8728109",
+      "name": "Decide",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/resolution/decide",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "1e12281f-8943-426c-a521-d810fce99839",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.data) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Decide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "_note": "Seed data for the fake legacy claims system. daysAgo is relative to legacy server start. CLM-FAIL has no page: the legacy system errors on it.",
+  "claimNotes": {
+    "CLM-8821": [
+      { "daysAgo": 32, "author": "j.patel", "text": "Claim declined under PDS 6.1: no police report number provided." },
+      { "daysAgo": 26, "author": "mailroom", "text": "Customer emailed police report number and witness statement. Filed to documents tray." }
+    ],
+    "CLM-9002": [
+      { "daysAgo": 21, "author": "system", "text": "Claim lodged. Awaiting assessor allocation." },
+      { "daysAgo": 12, "author": "s.wong", "text": "Assessor queue backlog in North region. No assessor assigned yet." }
+    ],
+    "CLM-9003": [
+      { "daysAgo": 20, "author": "valuations", "text": "Total loss. Offer of $14,200 based on market value guide." },
+      { "daysAgo": 6, "author": "c.ross", "text": "Customer says offer is too low, has comparable listings." }
+    ],
+    "CLM-9150": [
+      { "daysAgo": 33, "author": "system", "text": "Claim lodged. Repairer Eastside Auto." },
+      { "daysAgo": 10, "author": "eastside", "text": "Parts on backorder, ETA unknown." }
+    ],
+    "CLM-9300": [
+      { "daysAgo": 50, "author": "system", "text": "Claim lodged. Repairer Northside Panels." },
+      { "daysAgo": 14, "author": "northside", "text": "Repair completed, brakes and front panel. Vehicle returned to customer." }
+    ],
+    "CLM-9400": [
+      { "daysAgo": 14, "author": "system", "text": "Glass claim lodged. Windscreen replacement ordered." }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+node_modules/
+var/
+n8n-data/
+*.log
+n8n/owner.local.json
+
+# Voice assets come from a recording of the author's own voice: kept off the public repo.
+models/voices/refs/
+models/voices/prompts/
+public/audio/
+
+# Chinese working copies of the docs, for the author only
+docs/zh/

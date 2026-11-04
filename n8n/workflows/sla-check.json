@@ -1,0 +1,108 @@
+{
+  "id": "cmpSlaCheck00001",
+  "name": "sla-check",
+  "active": false,
+  "nodes": [
+    {
+      "id": "c50a9311-a705-42d9-a345-5c162dd68503",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -200
+      ],
+      "parameters": {
+        "content": "## sla-check\nEvery hour: flag complaints at day 25 (owner) and day 28 (supervisor) of the 30-day limit.",
+        "width": 360,
+        "height": 160
+      }
+    },
+    {
+      "id": "ff5094d3-1d43-49ec-a4f7-d953d8359846",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "799321fb-ce4b-40d3-aff0-1addd7340a4a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "cb2d5e14-e7d7-4a4a-a767-5e963ef1bcef",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sla-check",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "9d57cca5-97c8-45f3-abc0-0b0f59468f51",
+      "name": "Check SLA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_URL || 'http://host.docker.internal:4100' }}/internal/sla/check",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "position": [
+        260,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [
+        [
+          {
+            "node": "Check SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

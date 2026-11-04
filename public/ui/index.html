@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Complaint Agent Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>Motor complaints agent</strong>
+      <span class="muted">demo · all models and source systems mocked</span>
+    </div>
+    <div class="links">
+      <span id="orch" class="pill">…</span>
+      <a href="http://localhost:5678/" target="_blank" rel="noopener">n8n canvas</a>
+      <a href="http://localhost:4200/" target="_blank" rel="noopener">Legacy system</a>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel call">
+      <div class="panel-head">
+        <h2>Call</h2>
+        <div class="controls">
+          <label><input type="checkbox" id="mute"> Mute</label>
+          <label><input type="checkbox" id="fast"> 1.1×</label>
+          <label><input type="checkbox" id="skip"> Skip audio</label>
+        </div>
+      </div>
+      <div class="scenarios" id="scenarios"></div>
+      <div class="actions">
+        <button id="runOthers" class="ghost">Run the other 4 (no audio)</button>
+      </div>
+      <div id="batch" class="batch" hidden></div>
+      <div id="transcript" class="transcript" aria-live="polite">
+        <p class="empty">Pick a scenario to start a call.</p>
+      </div>
+      <div id="keypad" class="keypad" hidden>
+        <div class="keys" id="keys"></div>
+        <div class="keypad-row"><span id="keyDisplay" class="key-display"></span><button id="keySend">Send #</button></div>
+      </div>
+    </section>
+
+    <section class="panel side">
+      <div id="card" class="card"><p class="empty">No complaint selected.</p></div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="timeline" class="active">Timeline</button>
+        <button role="tab" data-tab="queue">Human queue <span id="queueCount" class="count">0</span></button>
+        <button role="tab" data-tab="review">Review stats</button>
+        <button role="tab" data-tab="all">All complaints</button>
+      </nav>
+      <div id="tab-timeline" class="tab"></div>
+      <div id="tab-queue" class="tab" hidden></div>
+      <div id="tab-review" class="tab" hidden></div>
+      <div id="tab-all" class="tab" hidden></div>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

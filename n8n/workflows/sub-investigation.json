@@ -1,0 +1,456 @@
+{
+  "id": "cmpInvestig00001",
+  "name": "sub-investigation",
+  "active": false,
+  "nodes": [
+    {
+      "id": "6e300c86-2980-42a5-a9ae-bf0864fc4a40",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -260
+      ],
+      "parameters": {
+        "content": "## sub-investigation\n1. Claims API lookup\n2. Document retrieval (graph + vector for denials)\n3. RPA reads claim notes in the legacy system. The workflow **waits** for the robot's callback (Wait node), retries up to 3 times with back-off, then reports to the backend.",
+        "width": 460,
+        "height": 200
+      }
+    },
+    {
+      "id": "d9dbef7e-7156-43d4-a4bd-7ed80cffe34a",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "2df0b089-368b-432c-a8cb-99f61018fec1",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sub-investigation",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "6dbc9be3-1d1a-477d-a55e-6b11bf365abd",
+      "name": "Claims API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/investigation/claim",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "ecc52346-2766-41c5-a658-e49f1da28308",
+      "name": "Retrieve basis",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/investigation/retrieve",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, queryText: $('Webhook').first().json.body.queryText }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "de2f5153-1d32-4d81-a070-bcac2c6047b0",
+      "name": "Attempt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "761c38e3-c7d5-4dff-aa6f-3c7ff6bf89d1",
+              "name": "attempt",
+              "value": "={{ $('Next attempt').isExecuted ? $('Next attempt').last().json.attempt : 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "b29c9251-990f-4860-a4de-a9033a1ab298",
+              "name": "claimId",
+              "value": "={{ $('Claims API').first().json.data.claimId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "90707675-b048-4cc6-a3d8-8be9bf25caa5",
+      "name": "Queue RPA read",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/rpa/jobs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, kind: 'read_claim_notes', payload: { claimId: $('Attempt').last().json.claimId }, attempt: $('Attempt').last().json.attempt, idempotencyKey: $('Webhook').first().json.body.complaintId + ':read_notes:' + $('Attempt').last().json.attempt, callbackUrl: $execution.resumeUrl }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "813af002-96d5-47ac-a180-9d6345422172",
+      "name": "Wait for robot",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        0
+      ],
+      "webhookId": "dca7e029-87c0-4713-ab34-2aaac4150e92",
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "limitWaitTime": true,
+        "limitType": "afterTimeInterval",
+        "resumeAmount": 20,
+        "resumeUnit": "seconds",
+        "options": {}
+      }
+    },
+    {
+      "id": "b857cf6c-820a-400b-a525-ec8fd501ab51",
+      "name": "Robot OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "5eae2031-6dc1-45bd-af91-e86791aa007e",
+              "leftValue": "={{ $json.body?.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5b7ddc30-21c2-413f-ae36-9959bff2e728",
+      "name": "Report success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        -120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/investigation/complete",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, rpaOk: true, notes: $json.body.result.notes ?? [], attempts: $('Attempt').last().json.attempt }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "16c3e35a-54ec-4afd-a1b8-9ce4e40995fd",
+      "name": "Attempts left?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c765609b-03b4-4391-ab77-ce24d0bd4c31",
+              "leftValue": "={{ $('Attempt').last().json.attempt }}",
+              "rightValue": "={{ $('Webhook').first().json.body.attempts ?? 3 }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "56273df6-1f86-419f-a571-dcd5c9906c5b",
+      "name": "Log retry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        40
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/n8n-log",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, type: 'n8n_retry', summary: 'RPA read attempt ' + $('Attempt').last().json.attempt + ' failed, retrying in 2 s (attempt ' + ($('Attempt').last().json.attempt + 1) + ' of ' + ($('Webhook').first().json.body.attempts ?? 3) + ')' }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "c2c57139-ad75-46f5-a709-f7e62b9feb69",
+      "name": "Back-off",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2020,
+        40
+      ],
+      "webhookId": "d94d26bf-48f4-4eda-af6d-238147939553",
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 2,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "2d0f9cb0-8f43-4159-a9ab-3f2d54f741e8",
+      "name": "Next attempt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        40
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "386e451a-f4bf-4d0c-abdb-60750ce1ce59",
+              "name": "attempt",
+              "value": "={{ $('Attempt').last().json.attempt + 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dd7ef18a-6976-4cb5-ac62-fd19b399827a",
+      "name": "Report failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/investigation/complete",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, rpaOk: false, notes: [], attempts: $('Attempt').last().json.attempt }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Claims API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claims API": {
+      "main": [
+        [
+          {
+            "node": "Retrieve basis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve basis": {
+      "main": [
+        [
+          {
+            "node": "Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attempt": {
+      "main": [
+        [
+          {
+            "node": "Queue RPA read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Queue RPA read": {
+      "main": [
+        [
+          {
+            "node": "Wait for robot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for robot": {
+      "main": [
+        [
+          {
+            "node": "Robot OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Robot OK?": {
+      "main": [
+        [
+          {
+            "node": "Report success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Attempts left?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attempts left?": {
+      "main": [
+        [
+          {
+            "node": "Log retry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log retry": {
+      "main": [
+        [
+          {
+            "node": "Back-off",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Back-off": {
+      "main": [
+        [
+          {
+            "node": "Next attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Next attempt": {
+      "main": [
+        [
+          {
+            "node": "Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

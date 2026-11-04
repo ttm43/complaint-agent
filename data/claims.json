@@ -1,0 +1,12 @@
+{
+  "_note": "Mock Claims API data (read-only status). Claim notes live in the legacy system and are read by RPA. lodgedDaysAgo is relative to demo start.",
+  "claims": [
+    { "claimId": "CLM-8821", "policyNumber": "POL-1001", "type": "collision", "status": "DECLINED", "lodgedDaysAgo": 40, "decisionDaysAgo": 32, "declineClause": "6.1" },
+    { "claimId": "CLM-9002", "policyNumber": "POL-1002", "type": "collision", "status": "AWAITING_ASSESSMENT", "lodgedDaysAgo": 21 },
+    { "claimId": "CLM-9003", "policyNumber": "POL-1002", "type": "total_loss", "status": "OFFER_MADE", "lodgedDaysAgo": 35, "offerAmount": 14200 },
+    { "claimId": "CLM-9150", "policyNumber": "POL-1003", "type": "collision", "status": "AT_REPAIRER", "lodgedDaysAgo": 33 },
+    { "claimId": "CLM-9300", "policyNumber": "POL-1004", "type": "collision", "status": "REPAIR_COMPLETE", "lodgedDaysAgo": 50, "repairCompletedDaysAgo": 14 },
+    { "claimId": "CLM-9400", "policyNumber": "POL-1005", "type": "glass", "status": "IN_PROGRESS", "lodgedDaysAgo": 14 },
+    { "claimId": "CLM-FAIL", "policyNumber": "POL-1006", "type": "collision", "status": "AWAITING_ASSESSMENT", "lodgedDaysAgo": 18 }
+  ]
+}

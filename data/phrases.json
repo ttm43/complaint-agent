@@ -1,0 +1,26 @@
+{
+  "_note": "Fixed phrases, pre-recorded. Templates use {slot}; every value used in the scenarios is rendered ahead of time.",
+  "phrases": {
+    "GREETING": "Thanks for calling the Motor Claims complaints line. My name is Alex, and I'm an automated assistant. You can ask for a person at any time.",
+    "ASK_POLICY": "To start, could you tell me your policy number?",
+    "ASK_POLICY_AGAIN": "Sorry about that. Could you say the policy number again, slowly?",
+    "ASK_KEYPAD": "Let's try the keypad instead. Please type the four digits after P O L, then press hash.",
+    "ASK_DOB": "Thanks. And your date of birth, please?",
+    "NOT_CAUGHT": "Sorry, I didn't catch that. Could you say it again?",
+    "ASK_COMPLAINT": "Thank you, you're verified. In a sentence or two, what would you like to complain about?",
+    "ASK_CLARIFY": "I want to get this right. Is it about a delay, a declined claim, the amount we paid, or the quality of a repair?",
+    "HOLD_1": "Let me check that for you.",
+    "HOLD_2": "Still checking, thanks for waiting.",
+    "HOLD_3": "Thanks for bearing with me, I'm still looking.",
+    "HANDOFF_LIVE": "I'm going to put you through to one of our complaints specialists now. I've logged your complaint, so you won't need to repeat yourself.",
+    "HANDOFF_PRIORITY": "I'm sorry you're dealing with this. I'm putting you through to a specialist straight away, as a priority. Your complaint is already logged.",
+    "HANDOFF_CALLBACK": "I've logged your complaint. A complaints specialist will call you back within one business day.",
+    "HANDOFF_UNVERIFIED": "I'm sorry, I wasn't able to verify those details, so I can't discuss the policy on this call. I've still logged your complaint, and a specialist will call you back within one business day.",
+    "AFCA_NOTICE": "If you're not satisfied with our response, you can contact the Australian Financial Complaints Authority, a free and independent service, at A F C A dot org dot A U.",
+    "CONFIRM_PLAN": "Does that sound okay to you?",
+    "CLOSING": "I'm recording that on your complaint now, and you'll get an email confirming it with your reference number. Thanks for calling."
+  },
+  "templates": {
+    "CONFIRM_POLICY": "I heard {readback}. Is that right?"
+  }
+}

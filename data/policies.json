@@ -1,0 +1,12 @@
+{
+  "_note": "Mock Policy API data. All people and numbers are fictional.",
+  "policies": [
+    { "policyNumber": "POL-1001", "holder": "James Walker", "dob": "1978-09-03", "startDate": "2024-08-01", "pdsVersion": "2024", "vehicle": "2019 Toyota Corolla", "phone": "0400 000 101" },
+    { "policyNumber": "POL-1002", "holder": "Priya Sharma", "dob": "1990-04-12", "startDate": "2026-02-15", "pdsVersion": "2026", "vehicle": "2021 Mazda CX-5", "phone": "0400 000 102" },
+    { "policyNumber": "POL-1003", "holder": "Tom Nguyen", "dob": "1985-11-20", "startDate": "2026-01-10", "pdsVersion": "2026", "vehicle": "2017 Ford Ranger", "phone": "0400 000 103" },
+    { "policyNumber": "POL-1004", "holder": "Daniel Reid", "dob": "1982-06-30", "startDate": "2026-03-01", "pdsVersion": "2026", "vehicle": "2020 Hyundai i30", "phone": "0400 000 104" },
+    { "policyNumber": "POL-1005", "holder": "Marcus Lee", "dob": "1993-01-25", "startDate": "2026-05-05", "pdsVersion": "2026", "vehicle": "2022 Kia Sportage", "phone": "0400 000 105" },
+    { "policyNumber": "POL-1006", "holder": "Ben Carter", "dob": "1988-12-02", "startDate": "2026-04-18", "pdsVersion": "2026", "vehicle": "2018 Subaru Outback", "phone": "0400 000 106" },
+    { "policyNumber": "POL-1007", "holder": "Grace Kim", "dob": "1975-07-14", "startDate": "2025-09-09", "pdsVersion": "2024", "vehicle": "2016 Honda Jazz", "phone": "0400 000 107" }
+  ]
+}

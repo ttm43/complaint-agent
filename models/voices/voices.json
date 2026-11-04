@@ -1,0 +1,14 @@
+{
+  "note": "All voices come from one recording of the user (refs/source.wav). Each role gets its own pitch/formant shift (Praat 'Change gender') so they sound like different people. refs/*.wav and prompts/*.pt are generated; see scripts/voices/make_refs.py and scripts/voices/render.py.",
+  "source": "refs/source.wav",
+  "sourceText": "refs/source.txt",
+  "voices": {
+    "agent":                 { "formantRatio": 1.0,  "pitchMedian": 0 },
+    "customer:Priya Sharma": { "formantRatio": 1.15, "pitchMedian": 190 },
+    "customer:Tom Nguyen":   { "formantRatio": 1.05, "pitchMedian": 128 },
+    "customer:Ben Carter":   { "formantRatio": 0.93, "pitchMedian": 92 },
+    "customer:James Walker": { "formantRatio": 0.97, "pitchMedian": 100 },
+    "customer:Daniel Reid":  { "formantRatio": 1.02, "pitchMedian": 118 },
+    "customer:Marcus Lee":   { "formantRatio": 1.08, "pitchMedian": 140 }
+  }
+}

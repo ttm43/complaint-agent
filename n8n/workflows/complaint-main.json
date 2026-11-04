@@ -1,0 +1,80 @@
+{
+  "id": "cmpMain000000001",
+  "name": "complaint-main",
+  "active": false,
+  "nodes": [
+    {
+      "id": "12d172d3-9632-481e-a95c-f5c0d0a040af",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -200
+      ],
+      "parameters": {
+        "content": "## complaint-main\nCalled at call start and call end.\nIn production: queue the confirmation email and post-call record.",
+        "width": 360,
+        "height": 160
+      }
+    },
+    {
+      "id": "3c495d35-5ccb-4723-ac04-1e33169aace5",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "725f3114-ed3e-4a16-ae2b-6aa1897fc4b0",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "complaint-main",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "afd556cc-2574-463e-a22a-386a930bac3d",
+      "name": "Log call event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').first().json.body.backend }}/internal/call-event",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ complaintId: $('Webhook').first().json.body.complaintId, event: $('Webhook').first().json.body.event, outcome: $('Webhook').first().json.body.outcome }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Log call event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

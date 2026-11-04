@@ -1,0 +1,895 @@
+<title>Complaint Desk Agent</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one long case file. Each section is a stamped page; the swimlane is the centrepiece. */
+:root {
+  --bg: #eef1f4;
+  --paper: #ffffff;
+  --ink: #111a2b;
+  --muted: #5b6577;
+  --line: #d5dbe4;
+  --accent: #2346d8;
+  --accent-soft: #e3e9ff;
+  --l-customer: #3d4659;
+  --l-agent: #2346d8;
+  --l-rules: #6a3fc4;
+  --l-n8n: #d2493a;
+  --l-robot: #0f8a7a;
+  --l-people: #c27a06;
+  --zone-a: #e7ecfb;
+  --zone-b: #fbefe2;
+  --good: #1a8a4a;
+  --warn: #c27a06;
+  --stop: #c43a3a;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1220; --paper: #151c2e; --ink: #e8ecf5; --muted: #98a2b8; --line: #2a3450;
+    --accent: #7d97ff; --accent-soft: #1f2a52;
+    --l-customer: #b8c0d2; --l-agent: #7d97ff; --l-rules: #b392ff; --l-n8n: #ff7f6e; --l-robot: #3fd0bb; --l-people: #f5b84a;
+    --zone-a: #18213d; --zone-b: #2a2119;
+    --good: #4cd38a; --warn: #f5b84a; --stop: #ff7a7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1220; --paper: #151c2e; --ink: #e8ecf5; --muted: #98a2b8; --line: #2a3450;
+  --accent: #7d97ff; --accent-soft: #1f2a52;
+  --l-customer: #b8c0d2; --l-agent: #7d97ff; --l-rules: #b392ff; --l-n8n: #ff7f6e; --l-robot: #3fd0bb; --l-people: #f5b84a;
+  --zone-a: #18213d; --zone-b: #2a2119;
+  --good: #4cd38a; --warn: #f5b84a; --stop: #ff7a7a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 5.4vw, 4.1rem); line-height: 1.02; font-weight: 800; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.15rem); line-height: 1.1; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); max-width: 62ch; font-size: 1.05rem; }
+.mono { font-family: var(--f-mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: clamp(20px, 3.4vw, 40px); display: grid; gap: 22px; min-width: 0; }
+.sheet-head { display: grid; gap: 8px; }
+.stamp { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.stamp::before { content: ""; width: 18px; height: 2px; background: var(--accent); }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 36px; align-items: center; padding-block: 12px 8px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-copy { display: grid; gap: 20px; min-width: 0; }
+.case {
+  background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px;
+  box-shadow: 0 18px 50px -24px rgba(17, 26, 43, 0.35); min-width: 0;
+}
+.case-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.case-id { font-family: var(--f-mono); font-size: 0.85rem; color: var(--muted); }
+.live { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 0.72rem; color: var(--stop); text-transform: uppercase; letter-spacing: 0.08em; }
+.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--stop); animation: blink 1.2s infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+.wave { display: flex; align-items: center; gap: 3px; height: 44px; }
+.wave span { flex: 1; background: var(--accent); border-radius: 2px; height: 30%; animation: wave 1.1s ease-in-out infinite; opacity: 0.85; }
+@keyframes wave { 0%, 100% { height: 18%; } 50% { height: 92%; } }
+.case-rows { display: grid; gap: 8px; font-size: 0.9rem; }
+.case-row { display: flex; justify-content: space-between; gap: 12px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.case-row span:first-child { color: var(--muted); }
+.states { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--f-mono); font-size: 0.68rem; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); transition: background 0.3s, color 0.3s, border-color 0.3s; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.chip.done { color: var(--ink); border-color: var(--accent); }
+.clock { display: flex; align-items: center; gap: 14px; }
+.clock svg { width: 64px; height: 64px; flex: none; }
+.clock b { font-family: var(--f-display); font-size: 1.6rem; }
+
+.proof { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.proof div { background: var(--paper); padding: 18px 20px; display: grid; gap: 2px; }
+.proof b { font-family: var(--f-display); font-size: 2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.proof span { color: var(--muted); font-size: 0.86rem; }
+
+/* Swimlane */
+.lane-scroll { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+.lane-scroll svg { display: block; min-width: 960px; width: 100%; height: auto; }
+.lane-legend { display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 0.86rem; color: var(--muted); }
+.lane-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.split > div { display: grid; gap: 6px; padding: 16px 18px; border-radius: 10px; min-width: 0; }
+.split .a { background: var(--zone-a); }
+.split .b { background: var(--zone-b); }
+.split p { color: var(--muted); font-size: 0.93rem; }
+.btn { font: 500 0.85rem var(--f-body); border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.btn-main { background: var(--accent); border-color: var(--accent); color: var(--paper); min-width: 84px; }
+.btn-main:hover { color: var(--paper); filter: brightness(1.08); }
+.story { display: grid; gap: 12px; padding: 18px 20px; border-radius: 12px; background: var(--accent-soft); align-content: start; }
+.story-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.story-count { font-family: var(--f-mono); font-size: 0.8rem; color: var(--muted); }
+.story-who { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--paper); background: var(--accent); padding: 3px 10px; border-radius: 999px; transition: background 0.3s; }
+.story-text { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.5rem, 3.6vw, 2.4rem); line-height: 1.15; min-height: 1.2em; }
+.story-text.in { animation: rise 0.45s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.story-bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.story-bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.4s; }
+.story-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.say { font-family: var(--f-display); font-size: clamp(1.05rem, 2.2vw, 1.4rem); min-height: 1.6em; color: var(--ink); }
+.say small { display: block; font: 0.78rem var(--f-mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
+
+/* Hold ladder */
+.ladder svg { width: 100%; height: auto; display: block; min-width: 640px; }
+.ladder { overflow-x: auto; }
+.quote { font-family: var(--f-display); font-size: 1.15rem; font-weight: 500; max-width: 60ch; }
+.quote cite { display: block; font: 0.8rem var(--f-mono); color: var(--muted); margin-top: 8px; font-style: normal; }
+.cite { font-family: var(--f-mono); font-size: 0.82em; background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+
+/* Guardrails */
+.gates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.gate { border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.gate-head { display: flex; align-items: center; gap: 10px; }
+.gate-head i { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.gate ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 0.93rem; }
+.gate li { padding-left: 16px; position: relative; }
+.gate li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.gate .why { font-size: 0.85rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+
+/* Safety net */
+.net { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.net-item { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.2fr); gap: 12px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); font-size: 0.93rem; }
+.net-item b { font-weight: 600; }
+.net-item .arrow { color: var(--accent); font-family: var(--f-mono); }
+.net-item .to { color: var(--muted); }
+
+/* Trust chart */
+.trust { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.trust svg { width: 100%; height: auto; display: block; }
+.trust-copy { display: grid; gap: 14px; }
+.trust-copy p { color: var(--muted); }
+.trust-copy .big { font-family: var(--f-display); font-size: 3rem; line-height: 1; color: var(--ink); }
+
+/* Rollout */
+.road { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative; }
+.stop { display: grid; gap: 8px; padding: 0 16px 0 0; align-content: start; min-width: 0; }
+.stop .dot { width: 100%; height: 4px; background: var(--line); position: relative; margin-bottom: 12px; }
+.stop .dot::before { content: ""; position: absolute; left: 0; top: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--paper); border: 3px solid var(--accent); }
+.stop .when { font-family: var(--f-mono); font-size: 0.75rem; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; }
+.stop p { color: var(--muted); font-size: 0.92rem; }
+
+footer { color: var(--muted); font-size: 0.85rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+
+@media (max-width: 860px) {
+  .hero, .trust { grid-template-columns: minmax(0, 1fr); }
+  .gates { grid-template-columns: minmax(0, 1fr); }
+  .net { grid-template-columns: minmax(0, 1fr); }
+  .proof { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .road { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 24px; }
+  .split { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .net-item { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .net-item .arrow { display: none; }
+}
+
+/* Intent */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { font: 600 0.9rem var(--f-body); padding: 8px 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); cursor: pointer; }
+.tab.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.intent { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; }
+.intent-said { display: grid; gap: 10px; min-width: 0; }
+.intent-text { font-family: var(--f-display); font-weight: 600; font-size: clamp(1.3rem, 2.8vw, 1.9rem); line-height: 1.2; min-height: 3.6em; }
+.intent-bars { display: grid; gap: 16px; min-width: 0; }
+.bars { display: grid; gap: 12px; position: relative; }
+.bar { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 4.8em; gap: 10px; align-items: center; font-size: 0.95rem; }
+.bar-track { display: block; height: 22px; border-radius: 6px; background: var(--bg); position: relative; overflow: visible; }
+.bar-fill { display: block; height: 100%; width: 0; border-radius: 6px; background: var(--line); transition: width 0.9s cubic-bezier(.2,.8,.2,1); }
+.bar.top .bar-fill { background: var(--accent); }
+.bar-pct { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+.bar.top .bar-pct { color: var(--ink); font-weight: 600; }
+.bar-track::after { content: ""; position: absolute; left: 60%; top: -5px; bottom: -5px; width: 2px; background: var(--ink); opacity: 0.55; }
+.bars-legend { font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.verdict { font-family: var(--f-display); font-weight: 700; font-size: 1.15rem; padding: 10px 16px; border-radius: 10px; background: var(--bg); justify-self: start; transition: opacity 0.4s; }
+.verdict.good { color: var(--good); }
+.verdict.warn { color: var(--warn); }
+.verdict.stop { color: var(--stop); }
+.verdict.hide { opacity: 0; }
+
+/* RAG */
+.ragflow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.rag-col { display: grid; gap: 10px; align-content: start; padding: 16px; border-radius: 12px; border: 1px solid var(--line); min-width: 0; transition: opacity 0.5s, transform 0.5s, border-color 0.5s; }
+.ragflow[data-step="1"] [data-at="2"], .ragflow[data-step="1"] [data-at="3"], .ragflow[data-step="1"] [data-at="4"],
+.ragflow[data-step="2"] [data-at="3"], .ragflow[data-step="2"] [data-at="4"],
+.ragflow[data-step="3"] [data-at="4"] { opacity: 0.12; transform: translateY(6px); }
+.ragflow[data-step="1"] [data-at="1"], .ragflow[data-step="2"] [data-at="2"], .ragflow[data-step="3"] [data-at="3"], .ragflow[data-step="4"] [data-at="4"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.rag-q { font-family: var(--f-display); font-weight: 600; font-size: 1.15rem; line-height: 1.25; }
+.rag-sub { font-family: var(--f-mono); font-size: 0.75rem; color: var(--muted); }
+.ed { display: grid; gap: 2px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); transition: opacity 0.5s, background 0.5s; }
+.ed b { font-family: var(--f-display); font-size: 1.1rem; }
+.ed span { font-size: 0.82rem; color: var(--muted); }
+.ed-yes { background: var(--accent-soft); border-color: var(--accent); }
+.ed-no { opacity: 0.4; }
+.ed-no b { text-decoration: line-through; }
+.rag-graph svg { width: 100%; height: auto; display: block; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 0.92rem; color: var(--good); font-weight: 600; }
+@media (max-width: 860px) {
+  .intent { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .ragflow { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .bar { grid-template-columns: 7.5em minmax(0, 1fr) 3.4em; font-size: 0.85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wave span, .live::before { animation: none; }
+  .chip { transition: none; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Car insurance · complaints line</span>
+      <h1>Every complaint logged in the <em>first second</em>.</h1>
+      <p class="lede">AI handles the routine. People decide anything involving money.</p>
+    </div>
+    <aside class="case" aria-label="Example complaint in progress">
+      <div class="case-top">
+        <span class="case-id">Priya S. · CLM-9002</span>
+        <span class="live">On the call</span>
+      </div>
+      <div class="wave" aria-hidden="true" id="wave"></div>
+      <div class="states" id="states"></div>
+      <div class="clock">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--line)" stroke-width="6"></circle>
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="169.6" stroke-dashoffset="0"></circle>
+        </svg>
+        <div><b class="num">30 days</b><br><span class="eyebrow">Deadline clock running</span></div>
+      </div>
+    </aside>
+  </header>
+
+  <section class="proof" aria-label="What the working demo proves">
+    <div><b>9 / 9</b><span>scenarios pass</span></div>
+    <div><b>0</b><span>failed workflow runs</span></div>
+    <div><b>42</b><span>automated tests</span></div>
+    <div><b>64</b><span>voice clips checked</span></div>
+  </section>
+
+  <section class="sheet" aria-labelledby="journey">
+    <div class="sheet-head">
+      <span class="stamp">How it works</span>
+      <h2 id="journey">Follow one complaint</h2>
+    </div>
+    <div class="story" aria-live="polite">
+      <div class="story-meta">
+        <span class="story-count num" id="storyCount">Step 1 of 18</span>
+        <span class="story-who" id="storyWho">Customer</span>
+      </div>
+      <p class="story-text" id="storyText">Priya calls to complain.</p>
+      <div class="story-bar"><span id="storyBar"></span></div>
+      <div class="story-controls">
+        <button class="btn" id="prev" type="button" aria-label="Previous step">◀</button>
+        <button class="btn btn-main" id="play" type="button">Pause</button>
+        <button class="btn" id="next" type="button" aria-label="Next step">▶</button>
+      </div>
+    </div>
+    <div class="lane-scroll"><svg id="lanes" viewBox="0 0 1180 590" role="img" aria-label="Swimlane diagram of a complaint from call to closure"></svg></div>
+    <div class="lane-legend" id="legend"></div>
+  </section>
+
+  <section class="sheet" aria-labelledby="intent">
+    <div class="sheet-head">
+      <span class="stamp">Intent</span>
+      <h2 id="intent">Works out what the complaint is about</h2>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Example callers">
+      <button class="tab on" type="button" role="tab" data-case="0">Clear</button>
+      <button class="tab" type="button" role="tab" data-case="1">Unclear</button>
+      <button class="tab" type="button" role="tab" data-case="2">Fooled</button>
+    </div>
+    <div class="intent">
+      <div class="intent-said">
+        <span class="eyebrow" id="intentWho">Priya says</span>
+        <p class="intent-text" id="intentText">“My car was hit three weeks ago and nobody has come to assess it yet. I'm still waiting.”</p>
+      </div>
+      <div class="intent-bars">
+        <div class="bars" id="bars"></div>
+        <p class="verdict" id="verdict"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="rag">
+    <div class="sheet-head">
+      <span class="stamp">Retrieval (RAG)</span>
+      <h2 id="rag">Finds the exact rule, in the right edition</h2>
+    </div>
+    <div class="row">
+      <p class="say" id="ragCap" aria-live="polite"><small>Step 4 of 4</small>Every quoted rule is checked.</p>
+      <button class="btn btn-main" id="ragPlay" type="button">▶ Play</button>
+    </div>
+    <div class="ragflow" id="ragflow" data-step="4">
+      <div class="rag-col" data-at="1">
+        <span class="eyebrow">Question</span>
+        <p class="rag-q">“My claim was declined, but I sent the police report weeks ago.”</p>
+        <span class="rag-sub">James · claim CLM-8821</span>
+      </div>
+      <div class="rag-col" data-at="2">
+        <span class="eyebrow">Policy edition</span>
+        <div class="ed ed-yes"><b>PDS 2024</b><span>James's policy</span></div>
+        <div class="ed ed-no"><b>PDS 2026</b><span>Not his edition</span></div>
+      </div>
+      <div class="rag-col rag-graph" data-at="3">
+        <span class="eyebrow">Linked rules, 3 documents</span>
+        <svg id="ragGraph" viewBox="0 0 380 300" role="img" aria-label="Four linked rules: police report, review deadline, re-assessment procedure, 4-week limit"></svg>
+      </div>
+      <div class="rag-col" data-at="4">
+        <span class="eyebrow">Check</span>
+        <ul class="checks">
+          <li><span class="cite">PDS24-6.1</span> found ✓</li>
+          <li><span class="cite">PDS24-7.3</span> found ✓</li>
+          <li><span class="cite">PROC-3.1</span> found ✓</li>
+        </ul>
+        <p class="verdict warn">Changes a decision → manager's OK</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="silence">
+    <div class="sheet-head">
+      <span class="stamp">No dead air</span>
+      <h2 id="silence">The caller is never left in silence</h2>
+    </div>
+    <div class="row">
+      <p class="say" id="say" aria-live="polite"><small>Caller hears</small>“Let me check that for you.”</p>
+      <button class="btn btn-main" id="ladderPlay" type="button">▶ Play</button>
+    </div>
+    <div class="ladder"><svg id="ladder" viewBox="0 0 900 190" role="img" aria-label="Timeline of hold lines from 0 to 30 seconds"></svg></div>
+  </section>
+
+  <section class="sheet" aria-labelledby="gates">
+    <div class="sheet-head">
+      <span class="stamp">Guardrails</span>
+      <h2 id="gates">What the AI may do</h2>
+    </div>
+    <div class="gates">
+      <div class="gate">
+        <div class="gate-head"><i style="background: var(--good)"></i><h3>On its own</h3></div>
+        <ul><li>Explain, quoting the policy</li><li>Chase a repair or assessor</li><li>Resend documents</li></ul>
+      </div>
+      <div class="gate">
+        <div class="gate-head"><i style="background: var(--warn)"></i><h3>With a manager's OK</h3></div>
+        <ul><li>Anything involving money</li><li>Changing a claim decision</li></ul>
+      </div>
+      <div class="gate">
+        <div class="gate-head"><i style="background: var(--stop)"></i><h3>Straight to a person</h3></div>
+        <ul><li>Customer is struggling</li><li>No policy rule found</li><li>Customer asks for a person</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="net">
+    <div class="sheet-head">
+      <span class="stamp">Safety net</span>
+      <h2 id="net">Nothing gets lost</h2>
+    </div>
+    <div class="net">
+      <div class="net-item"><b>Number misheard</b><span class="arrow">→</span><span class="to">Customer types it in</span></div>
+      <div class="net-item"><b>Old system down</b><span class="arrow">→</span><span class="to">3 retries, then a person</span></div>
+      <div class="net-item"><b>No answer in 30 s</b><span class="arrow">→</span><span class="to">Put through to a person</span></div>
+      <div class="net-item"><b>Wrong fix</b><span class="arrow">→</span><span class="to">Customer says no, case reopens</span></div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="trust">
+    <div class="sheet-head">
+      <span class="stamp">Earned trust</span>
+      <h2 id="trust">Fewer checks only once it's proven</h2>
+    </div>
+    <div class="trust">
+      <svg id="trustChart" viewBox="0 0 560 320" role="img" aria-label="Worst-case error rate falls as correct closures accumulate, reaching 1 percent at 300"></svg>
+      <div class="trust-copy">
+        <span class="big num">300</span>
+        <p>correct in a row, then spot checks only.</p>
+        <p><button class="btn btn-main" id="trustPlay" type="button">▶ Play</button></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet" aria-labelledby="road">
+    <div class="sheet-head">
+      <span class="stamp">Rollout</span>
+      <h2 id="road">Four steps, stop at any</h2>
+    </div>
+    <div class="road">
+      <div class="stop"><span class="dot"></span><span class="when">2–4 weeks</span><h3>Study</h3></div>
+      <div class="stop"><span class="dot"></span><span class="when">4–6 weeks</span><h3>Listen only</h3></div>
+      <div class="stop"><span class="dot"></span><span class="when">Then</span><h3>Log calls only</h3></div>
+      <div class="stop"><span class="dot"></span><span class="when">One type at a time</span><h3>Solve complaints</h3></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Working demo, not slides.</span>
+    <span class="mono">Ximing Tao · 2026</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent, text) => {
+    const n = document.createElementNS(NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+    if (text !== undefined) n.textContent = text;
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const SANS = "IBM Plex Sans, sans-serif", MONO = "IBM Plex Mono, monospace";
+
+  /* ---------- Hero: waveform, state chips ---------- */
+  const wave = document.getElementById("wave");
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("span");
+    s.style.animationDelay = `${(i * 0.07) % 1.1}s`;
+    s.style.animationDuration = `${0.8 + ((i * 37) % 7) / 10}s`;
+    wave.appendChild(s);
+  }
+  const STATES = ["RECEIVED", "IDENTIFIED", "CLASSIFIED", "INVESTIGATING", "RESOLVING", "PENDING_REVIEW", "CLOSED"];
+  const statesEl = document.getElementById("states");
+  const chips = STATES.map((s) => { const c = document.createElement("span"); c.className = "chip"; c.textContent = s; statesEl.appendChild(c); return c; });
+  const showState = (k) => chips.forEach((c, i) => { c.className = "chip" + (i === k ? " on" : i < k ? " done" : ""); });
+  let k = 4;
+  showState(k);
+  if (!reduce) setInterval(() => { k = (k + 1) % STATES.length; showState(k); }, 1600);
+
+  /* ---------- Swimlane story ---------- */
+  const LANES = [
+    { id: "customer", name: "Customer", color: "--l-customer" },
+    { id: "agent", name: "AI voice agent", color: "--l-agent" },
+    { id: "rules", name: "Rules engine", color: "--l-rules" },
+    { id: "n8n", name: "n8n workflows", color: "--l-n8n" },
+    { id: "robot", name: "Robot · old systems", color: "--l-robot" },
+    { id: "people", name: "Complaints team", color: "--l-people" },
+  ];
+  const STEPS = ["Log", "Verify", "Classify", "Investigate", "Decide", "Confirm", "Sign off", "Record", "Review", "Follow up"];
+  // [column, lane, box label, plain-English caption]
+  const NODES = [
+    [0, "customer", "Calls the line", "Priya calls to complain."],
+    [0, "rules", "Logged, clock|starts", "Logged at once. The 30-day clock starts."],
+    [1, "agent", "Reads back|policy number", "The AI reads her policy number back."],
+    [1, "customer", "Confirms", "“Yes, that's right.”"],
+    [1, "n8n", "Checks policy|and birth date", "Her details are checked."],
+    [2, "agent", "Asks what|happened", "“What happened?”"],
+    [2, "rules", "Category +|risk scan", "The complaint type is worked out."],
+    [3, "agent", "Plays hold|line", "“Let me check that for you.”"],
+    [3, "n8n", "Runs the|investigation", "The lookup starts."],
+    [3, "robot", "Reads claim|notes", "A robot reads the old claims system."],
+    [4, "rules", "Approved list +|clause check", "Rules check: is the AI allowed?"],
+    [5, "agent", "Explains, with|citations", "The AI explains, quoting the policy."],
+    [5, "customer", "Agrees", "Priya agrees. Call ends."],
+    [6, "n8n", "Waits for|sign-off", "Money involved? Wait…"],
+    [6, "people", "Approves money|or decisions", "…for a manager's OK."],
+    [7, "robot", "Writes record,|reads it back", "The robot saves the record."],
+    [8, "people", "Reviews the|closure", "A person checks before closing."],
+    [9, "customer", "“Solved?”|No → reopen", "“Solved?” If not, it reopens."],
+  ];
+  const svg = document.getElementById("lanes");
+  const X0 = 160, COLW = 101, TOP = 70, LANEH = 84, NW = 92, NH = 52;
+  const cx = (c) => X0 + COLW * c + COLW / 2;
+  const laneIdx = (lane) => LANES.findIndex((l) => l.id === lane);
+  const cy = (lane) => TOP + laneIdx(lane) * LANEH + LANEH / 2;
+  const pts = NODES.map(([c, lane]) => [cx(c), cy(lane)]);
+
+  let scene = null;
+  const drawLanes = () => {
+    svg.textContent = "";
+    const W = 1180, H = TOP + LANES.length * LANEH + 10;
+    el("rect", { x: X0, y: 8, width: COLW * 6, height: H - 8, rx: 10, fill: css("--zone-a") }, svg);
+    el("rect", { x: X0 + COLW * 6 + 4, y: 8, width: COLW * 4 - 4, height: H - 8, rx: 10, fill: css("--zone-b") }, svg);
+    el("text", { x: X0 + 12, y: 28, fill: css("--l-agent"), "font-family": MONO, "font-size": 11, "letter-spacing": "1" }, svg, "ON THE CALL");
+    el("text", { x: X0 + COLW * 6 + 16, y: 28, fill: css("--l-people"), "font-family": MONO, "font-size": 11, "letter-spacing": "1" }, svg, "AFTER THE CALL");
+    const heads = STEPS.map((s, i) => el("text", { x: cx(i), y: 54, "text-anchor": "middle", fill: css("--muted"), "font-family": SANS, "font-size": 12, "font-weight": 600 }, svg, s));
+    const laneBands = LANES.map((l, i) => {
+      const y = TOP + i * LANEH;
+      const band = el("rect", { x: 0, y, width: W, height: LANEH, fill: css(l.color), opacity: 0 }, svg);
+      el("line", { x1: 0, x2: W, y1: y, y2: y, stroke: css("--line"), "stroke-width": 1 }, svg);
+      el("rect", { x: 0, y: y + LANEH / 2 - 9, width: 4, height: 18, rx: 2, fill: css(l.color) }, svg);
+      el("text", { x: 14, y: y + LANEH / 2 + 4, fill: css("--ink"), "font-family": SANS, "font-size": 13, "font-weight": 600 }, svg, l.name);
+      return band;
+    });
+    el("line", { x1: 0, x2: W, y1: TOP + LANES.length * LANEH, y2: TOP + LANES.length * LANEH, stroke: css("--line") }, svg);
+    // one curve per hop, so the trail can be drawn in progressively
+    const hops = [];
+    for (let i = 1; i < pts.length; i++) {
+      const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+      const mx = (x1 + x2) / 2;
+      const d = x1 === x2 ? `M ${x1} ${y1} L ${x2} ${y2}` : `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+      el("path", { d, fill: "none", stroke: css("--line"), "stroke-width": 2, "stroke-dasharray": "4 5" }, svg);
+      const p = el("path", { d, fill: "none", stroke: css("--accent"), "stroke-width": 2.5 }, svg);
+      const len = p.getTotalLength();
+      p.setAttribute("stroke-dasharray", `${len} ${len}`);
+      p.setAttribute("stroke-dashoffset", len);
+      hops.push({ p, len });
+    }
+    const halo = el("circle", { r: 14, fill: css("--accent"), opacity: 0.25 }, svg);
+    const dot = el("circle", { r: 7, fill: css("--accent"), stroke: css("--paper"), "stroke-width": 3 }, svg);
+    const nodeEls = NODES.map(([c, lane, label]) => {
+      const color = css(LANES[laneIdx(lane)].color);
+      const g = el("g", { style: "transform-box: fill-box; transform-origin: center; transition: transform 0.3s" }, svg);
+      const rect = el("rect", { x: cx(c) - NW / 2, y: cy(lane) - NH / 2, width: NW, height: NH, rx: 9, fill: css("--paper"), stroke: color, "stroke-width": 1.6 }, g);
+      const lines = label.split("|");
+      const texts = lines.map((t, j) => el("text", { x: cx(c), y: cy(lane) + 4 + (j - (lines.length - 1) / 2) * 14, "text-anchor": "middle", fill: css("--ink"), "font-family": SANS, "font-size": 11.5 }, g, t));
+      return { g, rect, texts, color };
+    });
+    scene = { hops, nodeEls, dot, halo, laneBands, heads };
+  };
+
+  const storyText = document.getElementById("storyText");
+  const storyWho = document.getElementById("storyWho");
+  const storyCount = document.getElementById("storyCount");
+  const storyBar = document.getElementById("storyBar");
+  const playBtn = document.getElementById("play");
+
+  const paintStep = (n) => {
+    const { hops, nodeEls, laneBands, heads, dot, halo } = scene;
+    hops.forEach((h, i) => h.p.setAttribute("stroke-dashoffset", i < n ? 0 : h.len));
+    nodeEls.forEach((ne, i) => {
+      const on = i <= n;
+      ne.rect.setAttribute("fill", on ? ne.color : css("--paper"));
+      ne.texts.forEach((t) => t.setAttribute("fill", on ? css("--paper") : css("--ink")));
+      ne.g.style.transform = i === n ? "scale(1.12)" : "scale(1)";
+    });
+    const lane = laneIdx(NODES[n][1]);
+    laneBands.forEach((b, i) => b.setAttribute("opacity", i === lane ? 0.09 : 0));
+    heads.forEach((h, i) => { h.setAttribute("fill", i === NODES[n][0] ? css("--accent") : css("--muted")); });
+    [dot, halo].forEach((c) => { c.setAttribute("cx", pts[n][0]); c.setAttribute("cy", pts[n][1]); });
+    const l = LANES[lane];
+    storyWho.textContent = l.name;
+    storyWho.style.background = `var(${l.color})`;
+    storyCount.textContent = `Step ${n + 1} of ${NODES.length}`;
+    storyText.textContent = NODES[n][3];
+    storyText.classList.remove("in"); void storyText.offsetWidth; storyText.classList.add("in");
+    storyBar.style.width = `${((n + 1) / NODES.length) * 100}%`;
+  };
+
+  // move the dot along one hop, drawing the trail behind it
+  const hopTo = (n, done) => {
+    if (n === 0) { paintStep(n); done(); return; }
+    const hop = scene.hops[n - 1];
+    const t0 = performance.now(), DUR = 650;
+    const frame = (now) => {
+      const f = Math.min(1, (now - t0) / DUR);
+      const e = 1 - Math.pow(1 - f, 3);
+      const p = hop.p.getPointAtLength(e * hop.len);
+      hop.p.setAttribute("stroke-dashoffset", hop.len * (1 - e));
+      [scene.dot, scene.halo].forEach((c) => { c.setAttribute("cx", p.x); c.setAttribute("cy", p.y); });
+      if (f < 1) requestAnimationFrame(frame); else { paintStep(n); done(); }
+    };
+    requestAnimationFrame(frame);
+  };
+
+  let step = 0, playing = !reduce, timer = null, busy = false;
+  const HOLD = 3200;
+  const schedule = () => {
+    clearTimeout(timer);
+    if (!playing) return;
+    const last = step === NODES.length - 1;
+    timer = setTimeout(() => go(last ? 0 : step + 1), last ? HOLD + 2500 : HOLD);
+  };
+  const go = (n) => {
+    if (busy) return;
+    busy = true;
+    if (n !== step + 1) { paintStep(n); step = n; busy = false; schedule(); return; }
+    hopTo(n, () => { step = n; busy = false; schedule(); });
+  };
+  const setPlaying = (on) => { playing = on; playBtn.textContent = on ? "Pause" : "Play"; schedule(); };
+  playBtn.addEventListener("click", () => setPlaying(!playing));
+  document.getElementById("next").addEventListener("click", () => { setPlaying(false); if (step < NODES.length - 1) go(step + 1); });
+  document.getElementById("prev").addEventListener("click", () => { setPlaying(false); if (step > 0) go(step - 1); });
+  playBtn.textContent = playing ? "Pause" : "Play";
+
+  const legend = document.getElementById("legend");
+  LANES.forEach((l) => { const s = document.createElement("span"); s.innerHTML = `<i style="background: var(${l.color})"></i>${l.name}`; legend.appendChild(s); });
+
+  /* ---------- Hold ladder: the backend's real schedule ---------- */
+  // HOLD_1 at once, HOLD_2 after 4 s, HOLD_3 every 8 s, person at 30 s
+  const EVENTS = [
+    [0, "Let me check that for you.", "--l-agent", 1, "Hold line 1"],
+    [4, "Still checking, thanks for waiting.", "--l-agent", -1, "Hold line 2"],
+    [12, "Thanks for bearing with me…", "--l-agent", 1, "Hold line 3"],
+    [20, "…bearing with me…", "--l-agent", -1, "Hold line 3 again"],
+    [28, "…bearing with me…", "--l-agent", 1, "Hold line 3 again"],
+    [30, "Put through to a person", "--stop", -1, "Handoff"],
+  ];
+  const SAY = [
+    "Let me check that for you.", "Still checking, thanks for waiting.", "Thanks for bearing with me, I'm still looking.",
+    "Thanks for bearing with me, I'm still looking.", "Thanks for bearing with me, I'm still looking.",
+    "I'm going to put you through to one of our complaints specialists now. I've logged your complaint, so you won't need to repeat yourself.",
+  ];
+  const sayEl = document.getElementById("say");
+  const L = 40, R = 860, Y = 110, xT = (t) => L + (t / 30) * (R - L);
+  let ladder = null;
+  const drawLadder = () => {
+    const s = document.getElementById("ladder");
+    s.textContent = "";
+    el("text", { x: L, y: 24, fill: css("--muted"), "font-family": MONO, "font-size": 11, "letter-spacing": "1" }, s, "SECONDS WAITING");
+    el("rect", { x: L, y: Y - 6, width: R - L, height: 12, rx: 6, fill: css("--line") }, s);
+    const fill = el("rect", { x: L, y: Y - 6, width: R - L, height: 12, rx: 6, fill: css("--accent-soft") }, s);
+    for (let t = 0; t <= 30; t += 2) {
+      el("line", { x1: xT(t), x2: xT(t), y1: Y + 10, y2: Y + (t % 10 === 0 ? 20 : 15), stroke: css("--muted"), "stroke-width": 1 }, s);
+      if (t % 10 === 0) el("text", { x: xT(t), y: Y + 36, "text-anchor": "middle", fill: css("--muted"), "font-family": MONO, "font-size": 12 }, s, `${t} s`);
+    }
+    const marks = EVENTS.map(([t, label, color, up]) => {
+      const c = css(color);
+      const g = el("g", { style: "transition: opacity 0.3s" }, s);
+      el("line", { x1: xT(t), x2: xT(t), y1: Y, y2: Y - 24 * up, stroke: c, "stroke-width": 1.5 }, g);
+      el("circle", { cx: xT(t), cy: Y, r: 6, fill: c, stroke: css("--paper"), "stroke-width": 2 }, g);
+      const anchor = t === 0 ? "start" : t === 30 ? "end" : "middle";
+      el("text", { x: xT(t), y: up > 0 ? Y - 32 : Y + 58, "text-anchor": anchor, fill: css("--ink"), "font-family": SANS, "font-size": 13, "font-weight": 500 }, g, label);
+      return g;
+    });
+    el("text", { x: L, y: 186, fill: css("--muted"), "font-family": SANS, "font-size": 12.5 }, s, "Pre-recorded, so they play instantly.");
+    const head = el("line", { x1: L, x2: L, y1: Y - 16, y2: Y + 16, stroke: css("--accent"), "stroke-width": 3, "stroke-linecap": "round" }, s);
+    ladder = { fill, marks, head };
+  };
+  let ladderRun = 0;
+  const showLadder = (t) => {
+    const x = xT(Math.min(30, t));
+    ladder.head.setAttribute("x1", x); ladder.head.setAttribute("x2", x);
+    ladder.fill.setAttribute("width", Math.max(0, x - L));
+    let last = -1;
+    EVENTS.forEach((e, i) => { const on = t >= e[0]; ladder.marks[i].style.opacity = on ? 1 : 0.18; if (on) last = i; });
+    if (last >= 0) sayEl.innerHTML = `<small>Caller hears · ${EVENTS[last][4]}</small>“${SAY[last]}”`;
+  };
+  const playLadder = (auto) => {
+    const id = ++ladderRun;
+    if (auto === true && reduce) { showLadder(30); return; }
+    const t0 = performance.now(), SPEED = 2.2; // 30 s of call in about 14 s
+    const frame = (now) => {
+      if (id !== ladderRun) return;
+      const t = ((now - t0) / 1000) * SPEED;
+      showLadder(t);
+      if (t < 30) requestAnimationFrame(frame);
+      else setTimeout(() => { if (id === ladderRun) playLadder(auto); }, 3000);
+    };
+    requestAnimationFrame(frame);
+  };
+  document.getElementById("trustPlay").addEventListener("click", () => playTrust(false));
+  document.getElementById("ladderPlay").addEventListener("click", () => playLadder(false));
+
+  /* ---------- Trust chart: rule of three, worst case about 3/n ---------- */
+  let trust = null;
+  const TL = 56, TR = 540, TT = 20, TB = 270;
+  const xs = (n) => TL + (n / 400) * (TR - TL);
+  const lo = Math.log10(0.005), hi = Math.log10(0.4);
+  const ys = (p) => TB - ((Math.log10(p) - lo) / (hi - lo)) * (TB - TT);
+  const bigNum = document.querySelector(".trust-copy .big");
+  const showTrust = (n) => {
+    const f = (n - 10) / 390;
+    trust.curve.setAttribute("stroke-dashoffset", trust.len * (1 - Math.max(0, Math.min(1, f))));
+    trust.runner.setAttribute("cx", xs(Math.max(10, n))); trust.runner.setAttribute("cy", ys(3 / Math.max(10, n)));
+    trust.goal.style.opacity = n >= 300 ? 1 : 0.15;
+    bigNum.textContent = Math.min(300, Math.round(Math.max(0, n)));
+  };
+  const drawTrust = () => {
+    const s = document.getElementById("trustChart");
+    s.textContent = "";
+    [0.01, 0.03, 0.1, 0.3].forEach((p) => {
+      el("line", { x1: TL, x2: TR, y1: ys(p), y2: ys(p), stroke: css("--line"), "stroke-width": 1 }, s);
+      el("text", { x: TL - 8, y: ys(p) + 4, "text-anchor": "end", fill: css("--muted"), "font-family": MONO, "font-size": 11 }, s, `${Math.round(p * 100)}%`);
+    });
+    [0, 100, 200, 300, 400].forEach((n) => el("text", { x: xs(n), y: TB + 20, "text-anchor": "middle", fill: css("--muted"), "font-family": MONO, "font-size": 11 }, s, n));
+    el("text", { x: (TL + TR) / 2, y: TB + 42, "text-anchor": "middle", fill: css("--muted"), "font-family": SANS, "font-size": 12 }, s, "Correct in a row");
+    el("line", { x1: TL, x2: TR, y1: TB, y2: TB, stroke: css("--muted"), "stroke-width": 1 }, s);
+    let d = "";
+    for (let n = 10; n <= 400; n += 2) d += (n === 10 ? "M" : " L") + ` ${xs(n).toFixed(1)} ${ys(3 / n).toFixed(1)}`;
+    const curve = el("path", { d, fill: "none", stroke: css("--accent"), "stroke-width": 2.5 }, s);
+    const len = curve.getTotalLength();
+    curve.setAttribute("stroke-dasharray", `${len} ${len}`);
+    el("line", { x1: TL, x2: TR, y1: ys(0.01), y2: ys(0.01), stroke: css("--good"), "stroke-width": 1.5, "stroke-dasharray": "6 4" }, s);
+    el("text", { x: TR, y: ys(0.01) - 8, "text-anchor": "end", fill: css("--good"), "font-family": SANS, "font-size": 12, "font-weight": 600 }, s, "Target: under 1%");
+    const goal = el("g", { style: "transition: opacity 0.4s" }, s);
+    el("circle", { cx: xs(300), cy: ys(0.01), r: 7, fill: css("--good"), stroke: css("--paper"), "stroke-width": 2 }, goal);
+    el("text", { x: xs(300), y: ys(0.01) + 24, "text-anchor": "middle", fill: css("--ink"), "font-family": SANS, "font-size": 12, "font-weight": 600 }, goal, "300");
+    el("text", { x: xs(10) + 8, y: ys(0.3) + 4, fill: css("--ink"), "font-family": SANS, "font-size": 12 }, s, "Worst-case error rate");
+    const runner = el("circle", { r: 6, fill: css("--accent"), stroke: css("--paper"), "stroke-width": 2 }, s);
+    trust = { curve, len, goal, runner };
+    showTrust(400);
+  };
+  let trustRun = 0;
+  const playTrust = (auto) => {
+    const id = ++trustRun;
+    if (auto === true && reduce) { showTrust(400); return; }
+    const t0 = performance.now(), DUR = 5000;
+    const frame = (now) => {
+      if (id !== trustRun) return;
+      const f = Math.min(1, (now - t0) / DUR);
+      showTrust(400 * (1 - Math.pow(1 - f, 2)));
+      if (f < 1) requestAnimationFrame(frame); else setTimeout(() => { if (id === trustRun) playTrust(auto); }, 3500);
+    };
+    requestAnimationFrame(frame);
+  };
+
+
+  /* ---------- Intent: real classifier outputs from scenarios 1, 3 and 8 ---------- */
+  const CASES = [
+    { who: "Priya says", text: "My car was hit three weeks ago and nobody has come to assess it yet. I'm still waiting.",
+      p: [0.993, 0.002, 0.002, 0.002], verdict: "Claim delay. The AI handles it.", tone: "good" },
+    { who: "Caller says", text: "I'm just not happy with how things have been going, you know? It's just everything, really.",
+      p: [0.25, 0.25, 0.25, 0.25], verdict: "Not sure. Asks once, then a person.", tone: "warn" },
+    { who: "Caller says", text: "The car came back from the repairer two weeks ago and it's still not right. I'm still waiting.",
+      p: [0.846, 0.042, 0.042, 0.069], verdict: "Wrong: it's really repair quality. Caught when she says “not solved”.", tone: "stop" },
+  ];
+  const CATS = ["Claim delay", "Claim declined", "Payout amount", "Repair quality"];
+  const barsEl = document.getElementById("bars");
+  const bars = CATS.map((name) => {
+    const row = document.createElement("div");
+    row.className = "bar";
+    row.innerHTML = `<span>${name}</span><span class="bar-track"><span class="bar-fill"></span></span><span class="bar-pct">0%</span>`;
+    barsEl.appendChild(row);
+    return { row, fill: row.querySelector(".bar-fill"), pct: row.querySelector(".bar-pct") };
+  });
+  const legendRow = document.createElement("span");
+  legendRow.className = "bars-legend";
+  legendRow.textContent = "Line = 60% needed to act";
+  barsEl.appendChild(legendRow);
+  const intentText = document.getElementById("intentText");
+  const intentWho = document.getElementById("intentWho");
+  const verdict = document.getElementById("verdict");
+  const tabs = [...document.querySelectorAll(".tab")];
+  let intentRun = 0, intentCase = 0, intentAuto = null;
+  const showIntent = (i, animate) => {
+    const id = ++intentRun;
+    intentCase = i;
+    const c = CASES[i];
+    tabs.forEach((t, j) => { t.classList.toggle("on", j === i); t.setAttribute("aria-selected", j === i); });
+    intentWho.textContent = c.who;
+    const max = Math.max(...c.p);
+    const setBars = (on) => bars.forEach((b, j) => {
+      b.row.classList.toggle("top", on && c.p[j] === max && max >= 0.5);
+      b.fill.style.width = on ? `${Math.max(1, c.p[j] * 100)}%` : "0%";
+      b.pct.textContent = on ? `${(c.p[j] * 100).toFixed(c.p[j] >= 0.1 ? 0 : 1)}%` : "";
+    });
+    verdict.className = `verdict ${c.tone}`;
+    verdict.textContent = c.verdict;
+    if (!animate) { intentText.textContent = `“${c.text}”`; setBars(true); return; }
+    setBars(false);
+    verdict.classList.add("hide");
+    const words = c.text.split(" ");
+    let w = 0;
+    const type = () => {
+      if (id !== intentRun) return;
+      w++;
+      intentText.textContent = `“${words.slice(0, w).join(" ")}${w >= words.length ? "”" : ""}`;
+      if (w < words.length) setTimeout(type, 110);
+      else setTimeout(() => {
+        if (id !== intentRun) return;
+        setBars(true);
+        setTimeout(() => { if (id === intentRun) verdict.classList.remove("hide"); }, 1000);
+      }, 300);
+    };
+    type();
+  };
+  const cycleIntent = () => {
+    clearInterval(intentAuto);
+    intentAuto = setInterval(() => showIntent((intentCase + 1) % CASES.length, true), 9000);
+  };
+  tabs.forEach((t, i) => t.addEventListener("click", () => { clearInterval(intentAuto); showIntent(i, true); }));
+  showIntent(0, false);
+
+  /* ---------- RAG: scenario 7, graph + vector retrieval in PDS 2024 ---------- */
+  const RAG_CAPS = [
+    "James asks about his declined claim.",
+    "Only his policy's edition is searched.",
+    "Linked rules are followed across 3 documents.",
+    "Every quoted rule is checked.",
+  ];
+  const G_NODES = {
+    decline: [190, 30, "James's decline", "--l-customer"],
+    pr: [80, 110, "Police report", "--l-agent"],
+    review: [290, 150, "Review in 10 days", "--l-agent"],
+    proc: [110, 210, "Re-assess", "--l-rules"],
+    cop: [270, 270, "4-week limit", "--l-robot"],
+  };
+  const G_EDGES = [["pr", "decline", "reason"], ["review", "pr", "deadline"], ["proc", "review", "process"], ["cop", "proc", "outer limit"]];
+  const G_IDS = { pr: "PDS24-6.1", review: "PDS24-7.3", proc: "PROC-3.1", cop: "COP-7.2", decline: "CLM-8821" };
+  let graph = null;
+  const drawGraph = () => {
+    const s = document.getElementById("ragGraph");
+    s.textContent = "";
+    const edges = G_EDGES.map(([a, b, label]) => {
+      const [x1, y1] = G_NODES[a], [x2, y2] = G_NODES[b];
+      const line = el("line", { x1, y1, x2, y2, stroke: css("--accent"), "stroke-width": 2 }, s);
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      line.setAttribute("stroke-dasharray", `${len} ${len}`);
+      const t = el("text", { x: (x1 + x2) / 2 + 6, y: (y1 + y2) / 2 - 4, fill: css("--accent"), "font-family": MONO, "font-size": 11, style: "transition: opacity 0.4s" }, s, label);
+      return { line, len, t };
+    });
+    const nodes = Object.entries(G_NODES).map(([key, [x, y, label, color]]) => {
+      const g = el("g", { style: "transition: opacity 0.4s" }, s);
+      const w = Math.max(96, label.length * 7.4 + 20);
+      el("rect", { x: x - w / 2, y: y - 22, width: w, height: 44, rx: 9, fill: css("--paper"), stroke: css(color), "stroke-width": 1.8 }, g);
+      el("text", { x, y: y - 3, "text-anchor": "middle", fill: css("--ink"), "font-family": SANS, "font-size": 13, "font-weight": 600 }, g, label);
+      el("text", { x, y: y + 13, "text-anchor": "middle", fill: css("--muted"), "font-family": MONO, "font-size": 10 }, g, G_IDS[key]);
+      return g;
+    });
+    graph = { edges, nodes };
+  };
+  const showGraph = (f) => {
+    // f: 0..1 share of edges drawn
+    graph.edges.forEach((e, i) => {
+      const local = Math.max(0, Math.min(1, f * graph.edges.length - i));
+      e.line.setAttribute("stroke-dashoffset", e.len * (1 - local));
+      e.t.style.opacity = local >= 1 ? 1 : 0;
+    });
+    graph.nodes.forEach((n, i) => { n.style.opacity = i === 0 || f * graph.edges.length >= i - 1 ? 1 : 0.15; });
+  };
+  const ragflow = document.getElementById("ragflow");
+  const ragCap = document.getElementById("ragCap");
+  const setRag = (n) => {
+    ragflow.dataset.step = n;
+    ragCap.innerHTML = `<small>Step ${n} of 4</small>${RAG_CAPS[n - 1]}`;
+  };
+  let ragRun = 0;
+  const playRag = (auto) => {
+    const id = ++ragRun;
+    if (auto === true && reduce) { setRag(4); showGraph(1); return; }
+    setRag(1); showGraph(0);
+    setTimeout(() => { if (id === ragRun) setRag(2); }, 2600);
+    setTimeout(() => {
+      if (id !== ragRun) return;
+      setRag(3);
+      const t0 = performance.now(), DUR = 2800;
+      const frame = (now) => {
+        if (id !== ragRun) return;
+        const f = Math.min(1, (now - t0) / DUR);
+        showGraph(f);
+        if (f < 1) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    }, 5200);
+    setTimeout(() => { if (id === ragRun) setRag(4); }, 9200);
+    setTimeout(() => { if (id === ragRun) playRag(auto); }, 14500);
+  };
+  document.getElementById("ragPlay").addEventListener("click", () => playRag(false));
+
+  /* ---------- Start each animation when it scrolls into view ---------- */
+  const drawAll = () => { drawLanes(); paintStep(step); drawLadder(); showLadder(30); drawTrust(); drawGraph(); showGraph(1); };
+  drawAll();
+  const starters = new Map([
+    [document.getElementById("lanes"), () => schedule()],
+    [document.getElementById("ladder"), () => playLadder(true)],
+    [document.getElementById("bars"), () => { if (!reduce) { showIntent(0, true); cycleIntent(); } }],
+    [document.getElementById("ragflow"), () => playRag(true)],
+    [document.getElementById("trustChart"), () => playTrust(true)],
+  ]);
+  if ("IntersectionObserver" in window && !reduce) {
+    const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+      if (en.isIntersecting && starters.has(en.target)) { starters.get(en.target)(); starters.delete(en.target); io.unobserve(en.target); }
+    }), { threshold: 0.35 });
+    starters.forEach((_, node) => io.observe(node));
+  }
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+  new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+</script>
+

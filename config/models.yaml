@@ -1,0 +1,7 @@
+# Which shared models this project uses (keys in <workspace>/models/registry.yaml).
+# Runtime models are mocked in the demo; these are only used offline to pre-render and check audio.
+uses:
+  tts: qwen3-tts-12hz-1.7b-base     # renders every clip in public/audio
+  asr_qa: sherpa-parakeet-tdt-0.6b-fp32  # transcribes rendered clips back to catch bad renders
+assets:
+  voices: models/voices/voices.json
