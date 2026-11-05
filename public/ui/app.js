@@ -151,6 +151,7 @@ function connect() {
 }
 
 function onEvent(e) {
+  if (e.type === "demo_cleared") return resetView(e.summary);
   if (e.complaintId && e.complaintId === state.complaintId) drive(e);
   if (e.complaintId === selected()) appendTimeline(e);
   if (["state_changed", "human_task", "approval", "review", "task_done", "classified", "complaint_created"].includes(e.type)) refreshSoon();
@@ -283,7 +284,7 @@ async function refreshQueue() {
   try {
     const tasks = await api("/api/tasks");
     $("#queueCount").textContent = String(tasks.length);
-    const box = $("#tab-queue");
+    const box = $("#queueList");
     if (!tasks.length) {
       box.innerHTML = `<p class="empty">Queue is empty.</p>`;
       return;
@@ -433,8 +434,38 @@ async function runOthers() {
   }
 }
 
+// ---------- demo reset ----------
+// Every open page hears demo_cleared on the stream and empties itself, not just the one that clicked.
+function resetView(message) {
+  state.events = [];
+  state.handled = new Set();
+  state.complaintId = null;
+  viewing = null;
+  $("#transcript").innerHTML = `<p class="empty">${esc(message)}. Pick a scenario to start a call.</p>`;
+  $("#card").innerHTML = `<p class="empty">No complaint selected.</p>`;
+  $("#batch").hidden = true;
+  document.querySelectorAll(".scn.running").forEach((b) => b.classList.remove("running"));
+  renderTimeline();
+  refreshSoon();
+  refreshReview();
+  refreshAll();
+}
+
+async function clearDemo() {
+  const btn = $("#clearDemo");
+  btn.disabled = true;
+  try {
+    await api("/api/demo/clear", { method: "POST" });
+  } catch (err) {
+    toast(`Clear demo data: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function init() {
   buildKeypad();
+  $("#clearDemo").addEventListener("click", clearDemo);
   document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
   $("#runOthers").addEventListener("click", runOthers);
   try {

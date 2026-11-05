@@ -71,6 +71,16 @@ export class CallEngine {
     return this.sessions.get(complaintId)?.phase ?? null;
   }
 
+  /** True while any call is still talking to a customer. */
+  hasActiveCall(): boolean {
+    return [...this.sessions.values()].some((s) => s.phase !== "ended");
+  }
+
+  /** Drop finished calls, used when demo data is cleared. */
+  forgetEndedCalls(): void {
+    for (const [id, s] of this.sessions) if (s.phase === "ended") this.sessions.delete(id);
+  }
+
   /** Turns for one call are processed strictly in order. */
   turn(complaintId: string, input: CustomerTurn): Promise<Phase> {
     const s = this.sessions.get(complaintId);

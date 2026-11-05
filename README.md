@@ -32,7 +32,12 @@ Common options:
 
 Stop: `npm run stop` (the n8n container keeps running); to stop n8n as well: `node scripts/n8n.mjs down`.
 
-The legacy system has a **Clear demo data** button on its main menu and complaints register. It removes only what demo runs added (robot notes and registered complaints) and keeps the original claim notes.
+Both apps have a **Clear demo data** button, so a demo can be run again without restarting:
+
+- Demo page, Human queue tab: removes demo complaints, tasks, timeline entries and robot jobs, and resets review counts. Refused while a call or robot job is still running.
+- Legacy system, main menu and complaints register: removes robot notes and registered complaints, and keeps the original claim notes.
+
+Customer data (policies, claims, documents in `data/`) is read-only and never touched by either button.
 
 ## Running the demo
 

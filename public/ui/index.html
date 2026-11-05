@@ -52,7 +52,11 @@
         <button role="tab" data-tab="all">All complaints</button>
       </nav>
       <div id="tab-timeline" class="tab"></div>
-      <div id="tab-queue" class="tab" hidden></div>
+      <div id="tab-queue" class="tab" hidden>
+        <div class="queue-bar"><span class="muted">Removes every demo complaint, task and timeline entry; review counts go back to zero.</span>
+          <button id="clearDemo" class="ghost">Clear demo data</button></div>
+        <div id="queueList"></div>
+      </div>
       <div id="tab-review" class="tab" hidden></div>
       <div id="tab-all" class="tab" hidden></div>
     </section>

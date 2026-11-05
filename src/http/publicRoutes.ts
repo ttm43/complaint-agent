@@ -7,6 +7,7 @@ import { evaluate, sampleRate } from "../domain/review";
 import { slaStatus } from "../domain/sla";
 import { CATEGORIES } from "../domain/types";
 import { runScenario, type RunResult } from "../scenarios/runner";
+import { clearDemoData, DemoBusyError } from "../steps/demo";
 import { applyApproval, reopen, reviewClosure } from "../steps/resolution";
 import type { AuditEvent } from "../store/events";
 import { audioId, customerVoice } from "../phrases";
@@ -106,6 +107,15 @@ export function publicRoutes(ctx: AppContext, engine: CallEngine, orch: Orchestr
     if (b.mode === "sample" && !eligible) throw new HttpError(409, "Not enough evidence yet: the error upper bound is above target");
     ctx.reviews.save({ category, ...b });
     ok(res, ctx.reviews.get(category));
+  });
+
+  r.post("/api/demo/clear", (_req, res) => {
+    try {
+      ok(res, clearDemoData(ctx, engine));
+    } catch (err: unknown) {
+      if (err instanceof DemoBusyError) throw new HttpError(409, err.message);
+      throw err;
+    }
   });
 
   r.post("/api/demo/run-all", wrap(async (req, res) => {
